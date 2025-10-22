@@ -6,3 +6,5 @@ that you launch, for example, from this folder for a convenient access from your
 (<span>http://127.0.0.1:8000/index.html</span>).
 
 The page 'dataView.html' shows some intricacies of storing javascript strings to a WebAssembly memory.
+
+The page 'cfJsWaPerf.html' examines performance of data exchange with DataView methods.

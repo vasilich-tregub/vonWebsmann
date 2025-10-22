@@ -1,0 +1,75 @@
+<!doctype html>
+
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <title>Memory test w/ memory.wasm from WABT</title>
+  </head>
+
+  <body>
+      <textarea type="text" id="idSend" style="width: 800px; height: 200px;">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?
+At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati cupiditate non provident, similique sunt in culpa qui officia deserunt mollitia animi, id est laborum et dolorum fuga. Et harum quidem rerum facilis est et expedita distinctio. Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod maxime placeat facere possimus, omnis voluptas assumenda est, omnis dolor repellendus. Temporibus autem quibusdam et aut officiis debitis aut rerum necessitatibus saepe eveniet ut et voluptates repudiandae sint et molestiae non recusandae. Itaque earum rerum hic tenetur a sapiente delectus, ut aut reiciendis voluptatibus maiores alias consequatur aut perferendis doloribus asperiores repellat.</textarea>
+      <button onclick="writeToWASM()">Write to WASM</button>
+      <textarea type="text" id="idReceive" style="width: 800px; height: 200px;"></textarea>
+      <button onclick="readFromWASM()">Read from WASM</button>
+      <div id="idWarning" style="font-family: monospace; display: none;">
+      To not be blocked by CORS policy, this WASM demo should be run from http server. Python's http.server is good for testing purposes
+      and can be launched with a command
+          <pre>py -m http.server -b 127.0.0.1</pre>      
+      </div>
+      <div style="font-family: sans-serif;">
+          <ul>
+              <li>
+                  The button 'Write to WASM' writes the bytes of the left input to the memory allocated in the 'dataView.wasm' module
+                  (see the line <strong>(memory (export "memory") 1))</strong> in 'dataView.wat': 'dataView.wasm' is compiled from 'dataView.wat'.
+              </li>
+
+              <li>
+                  The button 'Read from WASM' reads the bytes from the memory allocated by the 'dataView.wasm' module and displays
+                  the corresponding characters in the right control; if the source UTF16 string has no lone surrogates, 
+                  the contents of inputs become identical.
+              </li>
+              <li>The elapsed time is output with alerts. Examine the js code of write/read functions and compare the elapsed time
+              of the two operations: the data transfer times are negligent as compared to the UI layout times.
+              </li>
+          </ul>
+      </div>
+      <script>
+          var wasmobj;
+          var membuffer;
+          var perf;
+          WebAssembly.instantiateStreaming(fetch("dataView.wasm")
+          ).then((obj) => {
+              console.log('memory.size = ' + obj.instance.exports.size() + " of 64K pages");
+              wasmobj = obj;
+              membuffer = new DataView(wasmobj.instance.exports.memory.buffer);
+              console.log('wstring length is ' + membuffer.getUint16(0x0ffe, true) + ' wide chars');
+              console.log('wstring buffer begins at 0x1000:');
+              for (let i = 0; i < 2 * membuffer.getUint16(0x0ffe, true); ++i)
+                console.log(obj.instance.exports.load8(0x1000 + i));
+          });
+          if(window.location.href.substr(0,8) == "file:///") idWarning.style.display = "inherit";
+          let rcvStr = "";
+          function readFromWASM() {
+              idReceive.value = "";
+              let start = performance.now();
+              for (let i = 0; i < membuffer.getUint16(0x0ffe, true); ++i)
+                  rcvStr += String.fromCharCode(membuffer.getUint16(0x1000 + 2 * i, true));
+              let end = performance.now();
+              alert(2 * idSend.value.length + " bytes read from WASM memory at " + (end - start).toFixed(3) + " ms");
+              idReceive.value = rcvStr;
+          }
+          function writeToWASM() {
+              let start = performance.now();
+              for (let i = 0; i < idSend.value.length; ++i)
+                  membuffer.setUint16(0x1000 + 2 * i, idSend.value.charCodeAt(i), true);
+              membuffer.setUint16(0xffe, idSend.value.length, true);
+              let end = performance.now();
+              alert(2 * idSend.value.length + " bytes written to WASM memory starting from 0x1000 memory address at " + (end - start).toFixed(3) + " ms");
+          }
+      </script>
+  </body>
+
+</html>
