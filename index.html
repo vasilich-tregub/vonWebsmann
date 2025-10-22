@@ -1,0 +1,67 @@
+<!doctype html>
+
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <title>Memory test w/ memory.wasm from WABT</title>
+  </head>
+
+  <body>
+      <input type="text" id="idSend" value="to be sent to WASM" />
+      <button onclick="writeToWASM()">Write to WASM</button>
+      <input type="text" id="idReceive" />
+      <button onclick="readFromWASM()">Read from WASM</button>
+      <div id="idWarning" style="font-family: monospace; display: none;">
+      To not be blocked by CORS policy, this WASM demo should be run from http server. Python's http.server is good for testing purposes
+      and can be launched with a command
+          <pre>py -m http.server -b 127.0.0.1</pre>      
+      </div>
+      <div style="font-family: sans-serif;">
+          <ul>
+              <li>
+                  The button 'Write to WASM' writes the bytes of the left input to the memory allocated in the 'memory.wasm' module
+                  (see the line <strong>(memory (export "memory") 2 3))</strong> in 'memory.wat': 'memory.wasm' is compiled from 'memory.wat'.
+              </li>
+
+              <li>
+                  The button 'Read from WASM' reads the bytes from the memory allocated in the 'memory.wasm' module and displays
+                  the corresponding characters in the right control; if the source chars are all ascii, the contents of inputs become
+                  identical.
+              </li>
+              <li>You can trace the code execution in browser's developer tool (Edge: F12, Chrome DevTools, Firefox DevTools, Safari's
+              Web Inspector) stopping at the breakpoints and pressing F10 (Edge) to step over lines of code. You can even step into the 
+              WASM code with F11 pressed on the line 47 (<strong>console.log('memory.size=' + obj.instance.exports.size());</strong>),
+              line 54 or line 60.
+              </li>
+          </ul>
+      </div>
+      <script>
+      var wasmobj;
+      WebAssembly.instantiateStreaming(fetch("memory.wasm")
+      ).then((obj) => {
+        console.log(obj.instance.exports.load(0x1000));
+        console.log(obj.instance.exports.load(0x1001));
+        console.log(obj.instance.exports.load(0x1002));
+        console.log(obj.instance.exports.load(0x1003));
+          console.log(obj.instance.exports.load(0x1004));
+          console.log(obj.instance.exports.load(0x1005));
+        console.log('memory.size=' + obj.instance.exports.size());
+        wasmobj = obj;
+      });
+      if(window.location.href.substr(0,8) == "file:///") idWarning.style.display = "inherit";
+      function writeToWASM() {
+          wasmobj.instance.exports.stringsizeput(idSend.value.length);
+          for (let i = 0; i < idSend.value.length; ++i)
+              wasmobj.instance.exports.stringput(i, idSend.value.charCodeAt(i));
+          alert(wasmobj.instance.exports.stringsizeget().toString() + " bytes written to WASM memory");
+      }
+      function readFromWASM(){
+          idReceive.value = "";
+          for (let i = 0; i < wasmobj.instance.exports.stringsizeget(); ++i)
+              idReceive.value += String.fromCharCode(wasmobj.instance.exports.stringget(i));
+      }
+      </script>
+  </body>
+
+</html>

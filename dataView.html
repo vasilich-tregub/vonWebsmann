@@ -1,0 +1,67 @@
+<!doctype html>
+
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <title>Memory test w/ memory.wasm from WABT</title>
+  </head>
+
+  <body>
+      <input type="text" id="idSend" value="to be sent to WASM" />
+      <button onclick="writeToWASM()">Write to WASM</button>
+      <input type="text" id="idReceive" />
+      <button onclick="readFromWASM()">Read from WASM</button>
+      <div id="idWarning" style="font-family: monospace; display: none;">
+      To not be blocked by CORS policy, this WASM demo should be run from http server. Python's http.server is good for testing purposes
+      and can be launched with a command
+          <pre>py -m http.server -b 127.0.0.1</pre>      
+      </div>
+      <div style="font-family: sans-serif;">
+          <ul>
+              <li>
+                  The button 'Write to WASM' writes the bytes of the left input to the memory allocated in the 'dataView.wasm' module
+                  (see the line <strong>(memory (export "memory") 1))</strong> in 'dataView.wat': 'dataView.wasm' is compiled from 'dataView.wat'.
+              </li>
+
+              <li>
+                  The button 'Read from WASM' reads the bytes from the memory allocated by the 'dataView.wasm' module and displays
+                  the corresponding characters in the right control; if the source UTF16 string has no lone surrogates, 
+                  the contents of inputs become identical.
+              </li>
+              <li>The example is written to demonstrate how javascript can access a WASM module memory via a DataView instance. It 
+              presents a very rudimentary idea of how WebAssembly can store a javascript string, a sequence of UTF-16 code units. Be 
+              aware that WebAssembly memory is always little endian and mind the endianness parameter of DataView method calls (do not 
+              forget to set it true).
+              </li>
+          </ul>
+      </div>
+      <script>
+          var wasmobj;
+          var membuffer;
+          WebAssembly.instantiateStreaming(fetch("dataView.wasm")
+          ).then((obj) => {
+              console.log('memory.size = ' + obj.instance.exports.size() + " of 64K pages");
+              wasmobj = obj;
+              membuffer = new DataView(wasmobj.instance.exports.memory.buffer);
+              console.log('wstring length is ' + membuffer.getUint16(0x0ffe, true) + ' wide chars');
+              console.log('wstring buffer begins at 0x1000:');
+              for (let i = 0; i < 2 * membuffer.getUint16(0x0ffe, true); ++i)
+                console.log(obj.instance.exports.load8(0x1000 + i));
+          });
+          if(window.location.href.substr(0,8) == "file:///") idWarning.style.display = "inherit";
+          function readFromWASM() {
+              idReceive.value = "";
+              for (let i = 0; i < membuffer.getUint16(0x0ffe, true); ++i)
+                  idReceive.value += String.fromCharCode(membuffer.getUint16(0x1000 + 2 * i, true));
+          }
+          function writeToWASM() {
+              for (let i = 0; i < idSend.value.length; ++i)
+                  membuffer.setUint16(0x1000 + 2 * i, idSend.value.charCodeAt(i), true);
+              membuffer.setUint16(0xffe, idSend.value.length, true);
+              alert(2 * idSend.value.length + " bytes written to WASM memory starting from 0x1000 memory address")
+          }
+      </script>
+  </body>
+
+</html>
