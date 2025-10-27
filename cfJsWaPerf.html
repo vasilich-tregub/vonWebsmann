@@ -58,7 +58,7 @@ At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praese
               for (let i = 0; i < membuffer.getUint16(0x0ffe, true); ++i)
                   rcvStr += String.fromCharCode(membuffer.getUint16(0x1000 + 2 * i, true));
               let end = performance.now();
-              alert(2 * idSend.value.length + " bytes read from WASM memory at " + (end - start).toFixed(3) + " ms");
+              alert(2 * membuffer.getUint16(0x0ffe, true) + " bytes read from WASM memory at " + (end - start).toFixed(3) + " ms");
               idReceive.value = rcvStr;
           }
           function writeToWASM() {
