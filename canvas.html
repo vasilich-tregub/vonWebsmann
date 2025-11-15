@@ -1,0 +1,22 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+</head>
+<body>
+    <div class="toolbar">
+        <button onclick="clearCanvas()">Clear Canvas</button>
+        <label for="canvasbkgColor">Canvas Bkg Color:</label>
+        <input type="color" id="canvasbkgColor" value=#6a5acd onchange="colorBackground(this.value)">
+        <button onclick="drawTriangleGrid()">draw triangle grid</button>
+        <button onclick="downloadCanvasContent()">Download Canvas Content</button>
+    </div>
+    <div id="canvasbackground" style="width: 1280px; height: 960px; outline: thin solid blue;">
+        <canvas id="canvas" width="1280" height="960" style="outline: thin solid blue;"></canvas>
+    </div>
+    <script src="canvas.js">
+    </script>
+</body>
+</html>
