@@ -12,9 +12,12 @@
         <input type="color" id="canvasbkgColor" value=#6a5acd onchange="colorBackground(this.value)">
         <button onclick="drawTriangleGrid()">draw triangle grid</button>
         <button onclick="downloadCanvasContent()">Download Canvas Content</button>
+        <button onclick="animation()">Animation</button>
     </div>
     <div id="canvasbackground" style="width: 1280px; height: 960px; outline: thin solid blue;">
         <canvas id="canvas" width="1280" height="960" style="outline: thin solid blue;"></canvas>
+    </div>
+    <div id="animateddiv" style="width: 128px; height: 96px; background-color: blue;">
     </div>
     <script src="canvas.js">
     </script>

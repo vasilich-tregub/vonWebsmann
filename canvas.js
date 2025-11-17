@@ -1,3 +1,6 @@
+const element = document.getElementById("animateddiv");
+let start;
+
 const sqrt3 = Math.sqrt(3);
 
 const cnvs = document.getElementById("canvas");
@@ -7,8 +10,36 @@ const originX = cnvs.width / 2.0;
 const originY = cnvs.height / 2.0;
 const halfedge = 25.0;
 
+const triangles = [];
 
 window.onload = () => { colorBackground("#6a5acd"); };
+
+function step(timestamp) {
+  if (start === undefined) {
+    start = timestamp;
+  }
+  const elapsed = timestamp - start;
+
+  // Math.min() is used here to make sure the element stops at exactly 200px
+  const shift = Math.min(0.01 * elapsed, 200);
+  element.style.transform = `translateX(${shift}px)`
+  if (shift < 200) {
+  let arrindex = Math.trunc((shift * 64) / 200).toString();
+  let tri = triangles[arrindex];
+    ctx.beginPath();
+    ctx.moveTo(tri.offX, tri.offY + tri.flip * (tri.halfedge * sqrt3 - tri.halfedge / sqrt3));
+    ctx.lineTo(tri.offX + tri.halfedge, tri.offY - tri.flip * tri.halfedge / sqrt3);
+    ctx.lineTo(tri.offX - tri.halfedge, tri.offY - tri.flip * tri.halfedge / sqrt3);
+    ctx.closePath();
+    ctx.fillStyle = tri.color;
+    ctx.fill();
+    requestAnimationFrame(step);
+  }
+}
+
+function animation() {
+    requestAnimationFrame(step);
+}
 
 function clearCanvas() {
     const ctx = document.getElementById("canvas").getContext("2d");
@@ -20,24 +51,32 @@ function drawTriangleGrid() {
     let periodOffY = originY;
     let flip = -1;
     drawTrianglePeriod(flip, periodOffX, periodOffY);
+    flip = -flip;
     periodOffX = originX;
-    periodOffY = originY + 2 * halfedge * (sqrt3 + 1 / sqrt3);
-    //drawTrianglePeriod(-flip, periodOffX, periodOffY);
+    periodOffY = originY + flip * halfedge * 2 * (sqrt3 + 1 / sqrt3);
+    drawTrianglePeriod(flip, periodOffX, periodOffY);
+    periodOffX = originX + flip * halfedge * 2 * (sqrt3 + 0.5 / sqrt3);
+    periodOffY = originY - flip * halfedge * 1 * (sqrt3 + 1 / sqrt3);
+    drawTrianglePeriod(flip, periodOffX, periodOffY);
+    periodOffX = originX - flip * halfedge * 2 * (sqrt3 + 0.5 / sqrt3);
+    periodOffY = originY - flip * halfedge * 1 * (sqrt3 + 1 / sqrt3);
+    drawTrianglePeriod(flip, periodOffX, periodOffY);
 }
 
 function drawTrianglePeriod(flip, periodOffX, periodOffY) {
     let posOffX = periodOffX;
     let posOffY = periodOffY;
     drawNumeralPositionTriangles(flip, halfedge, posOffX, posOffY);
-    posOffX = originX;
-    posOffY = originY - halfedge * (sqrt3 + 1 / sqrt3);
-    drawNumeralPositionTriangles(-flip, halfedge, posOffX, posOffY);
-    posOffX = originX + halfedge * (sqrt3 + 0.5 / sqrt3);
-    posOffY = originY + halfedge * (sqrt3 - 1 / sqrt3);
-    drawNumeralPositionTriangles(-flip, halfedge, posOffX, posOffY);
-    posOffX = originX - halfedge * (sqrt3 + 0.5 / sqrt3);
-    posOffY = originY + halfedge * (sqrt3 - 1 / sqrt3);
-    drawNumeralPositionTriangles(-flip, halfedge, posOffX, posOffY);
+    flip = -flip
+    posOffX = periodOffX;
+    posOffY = periodOffY - flip * halfedge * (sqrt3 + 1 / sqrt3);
+    drawNumeralPositionTriangles(flip, halfedge, posOffX, posOffY);
+    posOffX = periodOffX - flip * halfedge * (sqrt3 + 0.5 / sqrt3);
+    posOffY = periodOffY + flip * halfedge * (sqrt3 - 1 / sqrt3);
+    drawNumeralPositionTriangles(flip, halfedge, posOffX, posOffY);
+    posOffX = periodOffX + flip * halfedge * (sqrt3 + 0.5 / sqrt3);
+    posOffY = periodOffY + flip * halfedge * (sqrt3 - 1 / sqrt3);
+    drawNumeralPositionTriangles(flip, halfedge, posOffX, posOffY);
 }
 
 function drawNumeralPositionTriangles(flip, halfedge, posOffX, posOffY) {
@@ -68,6 +107,7 @@ function drawTriangle(flip, halfedge, offX, offY, color) {
     ctx.closePath();
     ctx.fillStyle = color;
     ctx.fill();
+    triangles.push({flip: flip, halfedge: halfedge, offX: offX, offY: offY, color: color});
 }
 
 function colorBackground(color) {
